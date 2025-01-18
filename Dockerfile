@@ -15,7 +15,7 @@ RUN apt install -y curl
 WORKDIR /app
 COPY package*.json ./
 COPY yarn.lock ./
-COPY .yarnrc ./
+#COPY .yarnrc ./
 # install dependencies
 RUN yarn install
 # copy source files
