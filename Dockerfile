@@ -1,39 +1,26 @@
-# FROM node:latest as build
-# WORKDIR /app
-# COPY package.json .
-# RUN yarn install
-# COPY . .
-# RUN yarn run build
-# FROM nginx
-# COPY --from=build /app/.next /usr/share/nginx/html
+# Dockerfile
+# base image
+FROM node:20-bullseye
 
-# Base
-FROM node:20-bullseye as base
+# set environment variables
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+ARG NEXT_PUBLIC_SOCKET_URL
+ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
+
+#
+RUN apt install -y curl
+# create & set working directory
 WORKDIR /app
 COPY package*.json ./
+COPY yarn.lock ./
+COPY .yarnrc ./
+# install dependencies
 RUN yarn install
-
-# Build
-FROM node:20-bullseye as builder
-WORKDIR /app
-ENV NODE_ENV=production
-
-COPY --from=base /app/node_modules ./node_modules
+# copy source files
 COPY . .
 
-RUN yarn run build
-
-# Reduce installed packages to production-only.
-# RUN npm prune --production
-
-# Production
-FROM node:20-bullseye as prod
-WORKDIR /app
-# ENV NODE_ENV=production
-# ENV NEXT_TELEMETRY_DISABLED 1
-
-COPY --from=builder /app/.next/standalone ./standalone
-COPY --from=builder /app/public ./standalone/public
-COPY --from=builder /app/.next/static ./standalone/.next/static
+RUN  yarn build
 
 CMD ["node", "./standalone/server.js"]
